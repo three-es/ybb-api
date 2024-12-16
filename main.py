@@ -137,31 +137,34 @@ def generate_book():
         # [Existing PDF generation logic happens here in the submit() function]
 
         # Define file paths using the secure downloads directory
-        text_filename = secure_filename(f"Gregoire_{book_name_input}_{date_input}_hard_text.pdf")
-        cover_filename = secure_filename(f"Gregoire_{book_name_input}_{date_input}_hard_cover.pdf")
+        # Generate secure filenames
+        text_filename = secure_filename(f"ybb_{book_name_input}_{date_input}_hard_text.pdf")
+        cover_filename = secure_filename(f"ybb_{book_name_input}_{date_input}_hard_cover.pdf")
 
-        text_filepath = os.path.join(DOWNLOADS_DIR, text_filename)
-        cover_filepath = os.path.join(DOWNLOADS_DIR, cover_filename)
+        # Define file paths in the static/media/full_book/output directory
+        output_dir = os.path.join(app.root_path, 'static', 'media', 'full_book', 'output')
+        text_filepath = os.path.join(output_dir, text_filename)
+        cover_filepath = os.path.join(output_dir, cover_filename)
 
-        # Save the output PDFs
-        output.addPage(page1)
-        output.addPage(page2)
-        output.addPage(page3)
-        output.addPage(page4)
-        output.addPage(page5)
-        output.addPage(page6)
-        output.addPage(page7)
-        output.addPage(page8)
-        output.addPage(page9)
-        output.addPage(page10)
-        output.addPage(page11)
-        output.addPage(page12)
+        # Create a new PDF writer for the final output
+        output = PdfFileWriter()
+        
+        # Add all pages to the output
+        for page in [page1, page2, page3, page4, page5, page6, page7, 
+                    page8, page9, page10, page11, page12]:
+            output.addPage(page)
 
+        # Save the text PDF
+        os.makedirs(os.path.dirname(text_filepath), exist_ok=True)
         with open(text_filepath, 'wb') as outfile:
             output.write(outfile)
+            
+        # Save the cover PDF
+        os.makedirs(os.path.dirname(cover_filepath), exist_ok=True)
+        with open(cover_filepath, 'wb') as outfile:
+            output.write(outfile)
 
-        # Return the download URLs using the download route
-        # Get the base URL from request
+        # Generate download URLs
         base_url = request.url_root.rstrip('/')
 
         return jsonify({
@@ -2671,7 +2674,7 @@ def submit():
         ###### Merge all Canvas Together ####
         output.addPage(page1)
         book_type = 'hard'
-        outputStream = open("static/media/full_book/output/{}_{}_{}_{}_cover.pdf".format(session_id_django, book_name_input, date_input, book_type), "wb")
+        outputStream = open("static/media/full_book/output/{}_{}_{}_cover.pdf".format(session_id_django, book_name_input, date_input), "wb")
         output.write(outputStream)
         outputStream.close()
 
@@ -2703,9 +2706,9 @@ def submit():
         #output1.addPage(page25)
         #output1.addPage(page25_1)
 
-
+        session_id_django = 'ybb'
         # finally, write "output" to a real file
-        outputStream = open("static/media/full_book/output/{}_{}_{}_{}_text.pdf".format(session_id_django, book_name_input, date_input, book_type), "wb")
+        outputStream = open(f"static/media/full_book/output/{session_id_django}_{book_name_input}_{date_input}_text.pdf", "wb")
         output1.write(outputStream)
         outputStream.close()
         end_time_merge = (time.time() - start_time)
@@ -2714,8 +2717,13 @@ def submit():
 
 
         print("PDF BOOK BUILDING COMPLETED IN:-", total_time)
-        order_url_text = "static/media/full_book/output/{}_{}_{}_{}_text.pdf".format(session_id_django, book_name_input, date_input, book_type)
-        order_url_cover = "static/media/full_book/output/{}_{}_{}_{}_cover.pdf".format(session_id_django, book_name_input, date_input, book_type)
+        order_url_text = "static/media/full_book/output/{}_{}_{}_text.pdf".format(session_id_django, book_name_input, date_input)
+        print(order_url_text)
+        order_url_cover = "static/media/full_book/output/{}_{}_{}_cover.pdf".format(session_id_django, book_name_input, date_input)
+        print(order_url_cover)
+        print(book_name_input)
+        print(date_input)
+        print(session_id_django)
 
 
 
@@ -2737,13 +2745,13 @@ def submit():
                 'success': False,
                 'error': 'Invalid date format'
             }), 400
-
+        base_url = request.url_root.rstrip('/')
         # Process the data (placeholder for Google view integration)
         response_data = {
             'success': True,
             'Processing Time': total_time,
-            'Order URL Text': f"{base_url}/download/{text_filename}",
-            'Order URL Cover': f"{base_url}/download/{cover_filename}",
+            'Order URL Text': f"{base_url}/download/{session_id_django}_{book_name_input}_{date_input}_text.pdf",
+            'Order URL Cover': f"{base_url}/download/{session_id_django}_{book_name_input}_{date_input}_cover.pdf",
             'message': 'Form data received successfully',
             'submitted_data': {
                 'name': data['name'],

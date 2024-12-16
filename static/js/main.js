@@ -37,10 +37,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="mt-3">
                             <h5>Download Generated Files:</h5>
                             <div class="d-grid gap-2">
-                                <a href="${data['Order URL Text']}" class="btn btn-primary" target="_blank">
+                                <a href="${data['Order URL Text']}" class="btn btn-primary" download>
                                     <i class="bi bi-file-pdf"></i> Download Text PDF
                                 </a>
-                                <a href="${data['Order URL Cover']}" class="btn btn-primary" target="_blank">
+                                <a href="${data['Order URL Cover']}" class="btn btn-primary" download>
                                     <i class="bi bi-file-pdf"></i> Download Cover PDF
                                 </a>
                             </div>
