@@ -1,4 +1,45 @@
 import logging
+from werkzeug.utils import secure_filename
+from flask import Flask, jsonify, request, send_from_directory, render_template
+import os
+import logging
+from datetime import datetime
+
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+
+# Initialize Flask app
+app = Flask(__name__)
+
+# Ensure upload directory exists
+UPLOAD_FOLDER = os.path.join('static', 'media', 'full_book', 'output')
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+# Configure maximum content length for file uploads (50MB)
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024
+@app.route('/download/<path:filename>')
+def download_file(filename):
+    try:
+        # Ensure the filename doesn't contain directory traversal
+        safe_filename = secure_filename(os.path.basename(filename))
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], safe_filename)
+        
+        if not os.path.exists(file_path):
+            logger.error(f"File not found: {file_path}")
+            return jsonify({
+                'success': False,
+                'error': 'File not found'
+            }), 404
+            
+        return send_from_directory(app.config['UPLOAD_FOLDER'], safe_filename)
+    except Exception as e:
+        logger.error(f"Error serving file: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'File not found'
+        }), 404
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 import os
 from flask import Flask, render_template, request, jsonify, send_from_directory, url_for
 from datetime import datetime
