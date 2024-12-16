@@ -1,0 +1,29 @@
+/* Additional custom styles */
+pre {
+    margin: 0;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.card {
+    border-radius: 0.5rem;
+}
+
+#responseArea {
+    min-height: 100px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+/* Ensure consistent form control appearance */
+.form-control:focus {
+    box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .container {
+        padding-top: 1rem !important;
+        padding-bottom: 1rem !important;
+    }
+}
