@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Display the raw response data
             responseContent.textContent = JSON.stringify(data, null, 2);
             responseContent.parentElement.className = 
-                response.ok ? 'border rounded p-3 bg-success-subtle' : 'border rounded p-3 bg-danger-subtle';
+                response.ok ? 'border rounded p-3 ' : 'border rounded p-3 bg-danger-subtle';
 
         } catch (error) {
             responseContent.textContent = JSON.stringify({
