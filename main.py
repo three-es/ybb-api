@@ -1,9 +1,10 @@
 import logging
 import os
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_from_directory, url_for
 from datetime import datetime
 import django
 from django.conf import settings
+from flask_cors import CORS
 
 # Configure Django settings
 if not settings.configured:
@@ -52,46 +53,38 @@ from datetime import date
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+# Initialize CORS after creating the Flask app
 app = Flask(__name__)
-app.secret_key = "your-secret-key-here"
+CORS(app)
+
+# Add this after creating the Flask app
+app.config['STATIC_FOLDER'] = os.path.join(app.root_path, 'static')
+os.makedirs(os.path.join(app.root_path, 'static', 'media', 'full_book', 'output'), exist_ok=True)
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
-import os
-from flask import send_file
-from werkzeug.utils import secure_filename
-
 # Create secure downloads directory
 DOWNLOADS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'secure_downloads')
 os.makedirs(DOWNLOADS_DIR, exist_ok=True)
 
-@app.route('/download/<filename>')
+@app.route('/download/<path:filename>')
 def download_file(filename):
     try:
-        # Ensure filename is secure and exists
-        secure_name = secure_filename(filename)
-        if not os.path.exists(os.path.join(DOWNLOADS_DIR, secure_name)):
-            logger.error(f"File not found: {secure_name}")
-            return jsonify({
-                'success': False,
-                'error': 'File not found'
-            }), 404
-            
-        # Serve file from secure downloads directory
+        # Define the directory where your generated files are stored
+        uploads_dir = os.path.join(app.root_path, 'static', 'media', 'full_book', 'output')
         return send_from_directory(
-            DOWNLOADS_DIR,
-            secure_name,
-            as_attachment=True,
-            download_name=secure_name
+            uploads_dir,
+            filename,
+            as_attachment=True
         )
     except Exception as e:
-        logger.error(f"Error downloading file: {str(e)}")
+        logger.error(f"Error serving file: {str(e)}")
         return jsonify({
             'success': False,
-            'error': 'Error downloading file'
-        }), 500
+            'error': 'File not found'
+        }), 404
 
 def generate_download_url(filename):
     """Generate a proper download URL for a file"""
@@ -115,7 +108,7 @@ def generate_book():
                 'success': False,
                 'error': 'No data received'
             }), 400
-        
+
         # Validate required fields
         required_fields = ['name', 'dedication', 'date']
         for field in required_fields:
@@ -129,7 +122,7 @@ def generate_book():
         name = data.get('name')
         dedication = data.get('dedication')
         date = data.get('date')
-        
+
         # Log the received data
         logger.info("Received API request:")
         logger.info(f"Name: {name}")
@@ -140,16 +133,16 @@ def generate_book():
         book_name_input = name.replace("'", "'").replace('"', '"')
         dedication_name_input = dedication.replace("'", "'").replace('"', '"')
         date_input = date
-        
+
         # [Existing PDF generation logic happens here in the submit() function]
-        
+
         # Define file paths using the secure downloads directory
         text_filename = secure_filename(f"Gregoire_{book_name_input}_{date_input}_hard_text.pdf")
         cover_filename = secure_filename(f"Gregoire_{book_name_input}_{date_input}_hard_cover.pdf")
-        
+
         text_filepath = os.path.join(DOWNLOADS_DIR, text_filename)
         cover_filepath = os.path.join(DOWNLOADS_DIR, cover_filename)
-        
+
         # Save the output PDFs
         output.addPage(page1)
         output.addPage(page2)
@@ -163,14 +156,14 @@ def generate_book():
         output.addPage(page10)
         output.addPage(page11)
         output.addPage(page12)
-        
+
         with open(text_filepath, 'wb') as outfile:
             output.write(outfile)
-            
+
         # Return the download URLs using the download route
         # Get the base URL from request
         base_url = request.url_root.rstrip('/')
-        
+
         return jsonify({
             'success': True,
             'files': {
@@ -198,28 +191,28 @@ def submit():
                 'success': False,
                 'error': 'No data received'
             }), 400
-        
+
         # Log the received data
         logger.info("Received form submission:")
         logger.info(f"Name: {data.get('name', 'Not provided')}")
         logger.info(f"Dedication: {data.get('dedication', 'Not provided')}")
         logger.info(f"Date: {data.get('date', 'Not provided')}")
-        
+
         # Validate required fields
         required_fields = ['name', 'dedication', 'date']
 
         #### starting the real interactions    
 
         book_name_input = data.get('name', 'Not provided')
-        book_name_input = book_name_input.replace("’", "'")
-        book_name_input = book_name_input.replace('”', '"')
+        book_name_input = book_name_input.replace("'", "")
+        book_name_input = book_name_input.replace('"', "")
         print(book_name_input)
 
         date_input = data.get('date', 'Not provided')
         print("here is each date_input:", date_input)
         dedication_name_input = data.get('dedication', 'Not provided')
-        dedication_name_input = dedication_name_input.replace("’", "'")
-        dedication_name_input = dedication_name_input.replace('”', '"')
+        dedication_name_input = dedication_name_input.replace("'", "")
+        dedication_name_input = dedication_name_input.replace('"', "")
 
 
 
@@ -1355,7 +1348,7 @@ def submit():
             Atribute2 = "You are an inspired thinker"
             Atribute3 = "You are devoted to family and friends"
         elif att_date == '02/07':
-            Atribute1 = "You are a busy bee’"
+            Atribute1 = "You are a busy bee'"
             Atribute2 = "You are warm and gracious"
             Atribute3 = "You are devoted to family and friends"
         elif att_date == '03/07':
@@ -2725,7 +2718,8 @@ def submit():
         order_url_cover = "static/media/full_book/output/{}_{}_{}_{}_cover.pdf".format(session_id_django, book_name_input, date_input, book_type)
 
 
-        
+
+
         for field in required_fields:
             if not data.get(field):
                 logger.error(f"Validation failed: Missing {field}")
@@ -2747,9 +2741,9 @@ def submit():
         # Process the data (placeholder for Google view integration)
         response_data = {
             'success': True,
-            'Processing Time:' : total_time,
-            'Order URL Text' : order_url_text,
-            'Order URL Cover' : order_url_cover,
+            'Processing Time': total_time,
+            'Order URL Text': f"{base_url}/download/{text_filename}",
+            'Order URL Cover': f"{base_url}/download/{cover_filename}",
             'message': 'Form data received successfully',
             'submitted_data': {
                 'name': data['name'],
@@ -2757,7 +2751,7 @@ def submit():
                 'date': data['date']
             }
         }
-        
+
         logger.info("Processing successful, sending response")
         logger.debug(f"Response data: {response_data}")
         return jsonify(response_data)

@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Show loading state
         submitBtn.disabled = true;
         spinner.classList.remove('d-none');
-        
+
         // Gather form data
         const formData = {
             name: document.getElementById('name').value,
@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const data = await response.json();
             console.log('Response received:', data);
-            
+
             // Display the response data and download links if available
             if (data.success) {
                 if (data['Order URL Text'] && data['Order URL Cover']) {
@@ -37,10 +37,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="mt-3">
                             <h5>Download Generated Files:</h5>
                             <div class="d-grid gap-2">
-                                <a href="${data['Order URL Text']}" class="btn btn-primary" download>
+                                <a href="${data['Order URL Text']}" class="btn btn-primary" target="_blank">
                                     <i class="bi bi-file-pdf"></i> Download Text PDF
                                 </a>
-                                <a href="${data['Order URL Cover']}" class="btn btn-primary" download>
+                                <a href="${data['Order URL Cover']}" class="btn btn-primary" target="_blank">
                                     <i class="bi bi-file-pdf"></i> Download Cover PDF
                                 </a>
                             </div>
