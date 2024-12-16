@@ -28,18 +28,10 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             const data = await response.json();
+            console.log('Response received:', data);
             
-            // Display the response data
-            const formattedResponse = data.success ? {
-                status: 'Success',
-                message: data.message,
-                submittedData: data.data
-            } : {
-                status: 'Error',
-                error: data.error
-            };
-            
-            responseContent.textContent = JSON.stringify(formattedResponse, null, 2);
+            // Display the raw response data
+            responseContent.textContent = JSON.stringify(data, null, 2);
             responseContent.parentElement.className = 
                 response.ok ? 'border rounded p-3 bg-success-subtle' : 'border rounded p-3 bg-danger-subtle';
 

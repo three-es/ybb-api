@@ -16,7 +16,14 @@ def index():
 @app.route('/api/submit', methods=['POST'])
 def submit():
     try:
+        # Get JSON data from request
         data = request.get_json()
+        if not data:
+            logger.error("No JSON data received")
+            return jsonify({
+                'success': False,
+                'error': 'No data received'
+            }), 400
         
         # Log the received data
         logger.info("Received form submission:")
@@ -38,23 +45,25 @@ def submit():
         try:
             date_obj = datetime.strptime(data['date'], '%Y-%m-%d')
         except ValueError:
+            logger.error("Invalid date format")
             return jsonify({
                 'success': False,
                 'error': 'Invalid date format'
             }), 400
 
-        # Here you would typically forward this to your Google view
-        # For now, we'll just return the data
+        # Process the data (placeholder for Google view integration)
         response_data = {
             'success': True,
-            'message': 'Data received successfully',
-            'data': {
+            'message': 'Form data received successfully',
+            'submitted_data': {
                 'name': data['name'],
                 'dedication': data['dedication'],
                 'date': data['date']
             }
         }
-        logger.debug(f"Sending response: {response_data}")
+        
+        logger.info("Processing successful, sending response")
+        logger.debug(f"Response data: {response_data}")
         return jsonify(response_data)
 
     except Exception as e:
