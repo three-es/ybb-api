@@ -32,15 +32,15 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Display the response data and download links if available
             if (data.success) {
-                if (data.order_url_text && data.order_url_cover) {
+                if (data['Order URL Text'] && data['Order URL Cover']) {
                     const downloadLinks = `
                         <div class="mt-3">
                             <h5>Download Generated Files:</h5>
                             <div class="d-grid gap-2">
-                                <a href="${data.order_url_text}" class="btn btn-primary" download>
+                                <a href="${data['Order URL Text']}" class="btn btn-primary" download>
                                     <i class="bi bi-file-pdf"></i> Download Text PDF
                                 </a>
-                                <a href="${data.order_url_cover}" class="btn btn-primary" download>
+                                <a href="${data['Order URL Cover']}" class="btn btn-primary" download>
                                     <i class="bi bi-file-pdf"></i> Download Cover PDF
                                 </a>
                             </div>
