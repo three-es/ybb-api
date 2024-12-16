@@ -155,11 +155,14 @@ def generate_book():
             output.write(outfile)
             
         # Return the download URLs using the download route
+        # Get the base URL from request
+        base_url = request.url_root.rstrip('/')
+        
         return jsonify({
             'success': True,
             'files': {
-                'text_pdf': f'/download/{text_filename}',
-                'cover_pdf': f'/download/{cover_filename}'
+                'text_pdf': f'{base_url}/download/{text_filename}',
+                'cover_pdf': f'{base_url}/download/{cover_filename}'
             },
             'message': 'PDF files generated successfully'
         })
