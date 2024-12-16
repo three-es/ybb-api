@@ -68,6 +68,7 @@ init_api_auth()
 @require_api_auth
 def generate_book():
     try:
+        start_time = time.time()
         # Get JSON data from request
         data = request.get_json()
         if not data:
@@ -89,32 +90,153 @@ def generate_book():
         # Process the book generation using existing logic
         name = data.get('name')
         dedication = data.get('dedication')
-        date = data.get('date')
+        date_input = data.get('date')
         
         # Log the received data
         logger.info("Received API request:")
         logger.info(f"Name: {name}")
         logger.info(f"Dedication: {dedication}")
-        logger.info(f"Date: {date}")
+        logger.info(f"Date: {date_input}")
 
-        # Generate PDFs (reuse existing logic)
+        # Clean input data
         book_name_input = name.replace("'", "'").replace('"', '"')
         dedication_name_input = dedication.replace("'", "'").replace('"', '"')
-        date_input = date
+
+        # Parse date components
+        year = int(date_input[0:4])
+        month = int(date_input[5:7])
+        day = int(date_input[8:10])
         
-        # [Existing PDF generation logic happens here in the submit() function]
+        # Format date for display
+        formatted_date = date(day=day, month=month, year=year)
+        date_display = {
+            'weekday': formatted_date.strftime('%A'),
+            'day': ordinal(day),
+            'month': formatted_date.strftime('%B'),
+            'year': str(year)
+        }
+        readable_date = f"{date_display['weekday']} {date_display['day']} {date_display['month']} {date_display['year']}"
         
-        # Return the download URLs
+        if month == 12:
+            astro_sign = 'Sagittarius' if (day < 22) else 'Capricorn'
+        elif month == 1:
+            astro_sign = 'Capricorn' if (day < 20) else 'Aquarius'
+        elif month == 2:
+            astro_sign = 'Aquarius' if (day < 19) else 'Pisces'
+        elif month == 3:
+            astro_sign = 'Pisces' if (day < 21) else 'Aries'
+        elif month == 4:
+            astro_sign = 'Aries' if (day < 20) else 'Taurus'
+        elif month == 5:
+            astro_sign = 'Taurus' if (day < 21) else 'Gemini'
+        elif month == 6:
+            astro_sign = 'Gemini' if (day < 21) else 'Cancer'
+        elif month == 7:
+            astro_sign = 'Cancer' if (day < 23) else 'Leo'
+        elif month == 8:
+            astro_sign = 'Leo' if (day < 23) else 'Virgo'
+        elif month == 9:
+            astro_sign = 'Virgo' if (day < 23) else 'Libra'
+        elif month == 10:
+            astro_sign = 'Libra' if (day < 23) else 'Scorpio'
+        elif month == 11:
+            astro_sign = 'Scorpio' if (day < 22) else 'Sagittarius'
+
+        # Calculate Chinese zodiac
+        chinese_year = year % 12
+        chinese_animals = ['Monkey', 'Rooster', 'Dog', 'Pig', 'Rat', 'Ox', 'Tiger', 'Rabbit', 'Dragon', 'Snake', 'Horse', 'Goat']
+        animal = chinese_animals[chinese_year]
+
+        # Calculate Chinese element
+        element_year = year % 10
+        if element_year in [0, 1]:
+            element = 'Metal'
+        elif element_year in [2, 3]:
+            element = 'Water'
+        elif element_year in [4, 5]:
+            element = 'Wood'
+        elif element_year in [6, 7]:
+            element = 'Fire'
+        else:
+            element = 'Earth'
+
+        # Format date
+        dave = date(day=day, month=month, year=year).strftime('%A')
+        dave2 = ordinal(int(date(day=day, month=month, year=year).strftime('%d')))
+        dave3 = date(day=day, month=month, year=year).strftime('%B %Y')
+        dave_123 = f"{dave} {dave2} {dave3}"
+
+        # Generate PDFs using existing logic from submit()
+        # ... [PDF generation code] ...
+
         order_url_text = f"static/media/full_book/output/Gregoire_{book_name_input}_{date_input}_hard_text.pdf"
         order_url_cover = f"static/media/full_book/output/Gregoire_{book_name_input}_{date_input}_hard_cover.pdf"
         
-        return jsonify({
+        # Calculate total processing time
+        total_processing_time = time.time() - start_time
+
+        # Prepare the response with all details
+        order_url_text = f"static/media/full_book/output/Gregoire_{book_name_input}_{date_input}_hard_text.pdf"
+        order_url_cover = f"static/media/full_book/output/Gregoire_{book_name_input}_{date_input}_hard_cover.pdf"
+
+        base_url = request.host_url.rstrip('/')
+        download_links = {
+            'text_pdf': f"{base_url}/{order_url_text}",
+            'cover_pdf': f"{base_url}/{order_url_cover}"
+        }
+
+        # Build detailed response
+        response_data = {
             'success': True,
-            'files': {
-                'text_pdf': request.host_url + order_url_text,
-                'cover_pdf': request.host_url + order_url_cover
-            }
-        })
+            'processing_time': f"{total_processing_time:.2f} seconds",
+            'book_details': {
+                'zodiac': {
+                    'western': astro_sign,
+                    'chinese': {
+                        'animal': animal,
+                        'element': element
+                    }
+                },
+                'date_info': {
+                    'formatted': readable_date,
+                    'components': date_display
+                },
+                'attributes': []  # Will be populated after calculating attributes
+            },
+            'input_data': {
+                'name': name,
+                'dedication': dedication,
+                'date': date_input
+            },
+            'files': download_links
+        }
+
+        # Calculate attributes based on date
+        att_date = f"{day}/{month:02d}"
+        if att_date == '01/01':
+            attributes = [
+                "You know what you want",
+                "You will work hard to get there",
+                "You like to play by the rules"
+            ]
+        elif att_date == '02/01':
+            attributes = [
+                "You are a busy bee",
+                "You care deeply about your friends",
+                "You are a great negotiator"
+            ]
+        # ... Add more date conditions here ...
+        else:
+            attributes = [
+                "You are unique",
+                "You have special qualities",
+                "You bring joy to others"
+            ]
+
+        # Update response with attributes
+        response_data['book_details']['attributes'] = attributes
+
+        return jsonify(response_data)
 
     except Exception as e:
         logger.error(f"Error processing API request: {str(e)}")
