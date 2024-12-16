@@ -59,7 +59,13 @@ app.secret_key = "your-secret-key-here"
 def index():
     return render_template('index.html')
 
+from auth import require_api_auth, init_api_auth
+
+# Initialize API authentication
+init_api_auth()
+
 @app.route('/api/generate', methods=['POST'])
+@require_api_auth
 def generate_book():
     try:
         # Get JSON data from request
