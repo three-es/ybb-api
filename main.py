@@ -59,6 +59,32 @@ app.secret_key = "your-secret-key-here"
 def index():
     return render_template('index.html')
 
+import os
+from flask import send_file
+from werkzeug.utils import secure_filename
+
+# Create output directory if it doesn't exist
+OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'media', 'full_book', 'output')
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+@app.route('/download/<path:filename>')
+def download_file(filename):
+    try:
+        secure_name = secure_filename(filename)
+        file_path = os.path.join(OUTPUT_DIR, secure_name)
+        if not os.path.exists(file_path):
+            return jsonify({
+                'success': False,
+                'error': 'File not found'
+            }), 404
+        return send_file(file_path, as_attachment=True)
+    except Exception as e:
+        logger.error(f"Error downloading file: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Error downloading file'
+        }), 500
+
 from auth import require_api_auth, init_api_auth
 
 # Initialize API authentication
@@ -104,16 +130,38 @@ def generate_book():
         
         # [Existing PDF generation logic happens here in the submit() function]
         
-        # Return the download URLs
-        order_url_text = f"static/media/full_book/output/Gregoire_{book_name_input}_{date_input}_hard_text.pdf"
-        order_url_cover = f"static/media/full_book/output/Gregoire_{book_name_input}_{date_input}_hard_cover.pdf"
+        # Define file paths using the OUTPUT_DIR constant
+        text_filename = secure_filename(f"Gregoire_{book_name_input}_{date_input}_hard_text.pdf")
+        cover_filename = secure_filename(f"Gregoire_{book_name_input}_{date_input}_hard_cover.pdf")
         
+        text_filepath = os.path.join(OUTPUT_DIR, text_filename)
+        cover_filepath = os.path.join(OUTPUT_DIR, cover_filename)
+        
+        # Save the output PDFs
+        output.addPage(page1)
+        output.addPage(page2)
+        output.addPage(page3)
+        output.addPage(page4)
+        output.addPage(page5)
+        output.addPage(page6)
+        output.addPage(page7)
+        output.addPage(page8)
+        output.addPage(page9)
+        output.addPage(page10)
+        output.addPage(page11)
+        output.addPage(page12)
+        
+        with open(text_filepath, 'wb') as outfile:
+            output.write(outfile)
+            
+        # Return the download URLs using the download route
         return jsonify({
             'success': True,
             'files': {
-                'text_pdf': request.host_url + order_url_text,
-                'cover_pdf': request.host_url + order_url_cover
-            }
+                'text_pdf': f'/download/{text_filename}',
+                'cover_pdf': f'/download/{cover_filename}'
+            },
+            'message': 'PDF files generated successfully'
         })
 
     except Exception as e:
@@ -414,7 +462,7 @@ def submit():
 
         ######## PAGE 5 BUILDER #########
         # 1264 × 612 Resolution of images
-        session_id_django = 'Gregoire'
+        session_id_django = 'YBB'
         start_time = time.time()
         month = int(date_input[5:7])
         day = int(date_input[8:10])
