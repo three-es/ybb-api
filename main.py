@@ -41,6 +41,23 @@ def download_file(filename):
         }), 404
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 import os
+from google.cloud import storage
+
+def upload_to_gcs(source_file_path, destination_blob_name):
+    """Uploads a file to Google Cloud Storage."""
+    try:
+        storage_client = storage.Client.create_anonymous_client()
+        bucket = storage_client.bucket('ybb-api')
+        blob = bucket.blob(destination_blob_name)
+        
+        # Upload the file
+        blob.upload_from_filename(source_file_path)
+        
+        # Get the public URL
+        return f"https://storage.googleapis.com/ybb-api/{destination_blob_name}"
+    except Exception as e:
+        logger.error(f"Error uploading to GCS: {str(e)}")
+        raise
 from flask import Flask, render_template, request, jsonify, send_from_directory, url_for
 from datetime import datetime
 import django
@@ -195,27 +212,47 @@ def generate_book():
                     page8, page9, page10, page11, page12]:
             output.addPage(page)
 
-        # Save the text PDF
-        os.makedirs(os.path.dirname(text_filepath), exist_ok=True)
-        with open(text_filepath, 'wb') as outfile:
+        # Save PDFs temporarily and upload to GCS
+        temp_dir = os.path.join(app.root_path, 'temp')
+        os.makedirs(temp_dir, exist_ok=True)
+        
+        temp_text_path = os.path.join(temp_dir, text_filename)
+        temp_cover_path = os.path.join(temp_dir, cover_filename)
+        
+        # Save temporary files
+        with open(temp_text_path, 'wb') as outfile:
+            output.write(outfile)
+        with open(temp_cover_path, 'wb') as outfile:
             output.write(outfile)
             
-        # Save the cover PDF
-        os.makedirs(os.path.dirname(cover_filepath), exist_ok=True)
-        with open(cover_filepath, 'wb') as outfile:
-            output.write(outfile)
-
-        # Generate download URLs
-        base_url = request.url_root.rstrip('/')
-
-        return jsonify({
-            'success': True,
-            'files': {
-                'text_pdf': f'{base_url}/download/{text_filename}',
-                'cover_pdf': f'{base_url}/download/{cover_filename}'
-            },
-            'message': 'PDF files generated successfully'
-        })
+        try:
+            # Upload to GCS and get public URLs
+            text_url = upload_to_gcs(temp_text_path, text_filename)
+            cover_url = upload_to_gcs(temp_cover_path, cover_filename)
+            
+            # Clean up temporary files
+            os.remove(temp_text_path)
+            os.remove(temp_cover_path)
+            
+            return jsonify({
+                'success': True,
+                'files': {
+                    'text_pdf': text_url,
+                    'cover_pdf': cover_url
+                },
+                'message': 'PDF files generated and uploaded successfully'
+            })
+        except Exception as e:
+            logger.error(f"Error in file upload: {str(e)}")
+            return jsonify({
+                'success': False,
+                'error': 'Error uploading files'
+            }), 500
+        finally:
+            # Ensure cleanup of temporary files
+            for temp_file in [temp_text_path, temp_cover_path]:
+                if os.path.exists(temp_file):
+                    os.remove(temp_file)
 
     except Exception as e:
         logger.error(f"Error processing API request: {str(e)}")
