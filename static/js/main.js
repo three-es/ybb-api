@@ -30,10 +30,27 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await response.json();
             console.log('Response received:', data);
             
-            // Display the raw response data
-            responseContent.textContent = JSON.stringify(data, null, 2);
-            responseContent.parentElement.className = 
-                response.ok ? 'border rounded p-3 ' : 'border rounded p-3 bg-danger-subtle';
+            // Display the response data and download links if available
+            if (data.files) {
+                const downloadLinks = `
+                    <div class="mt-3">
+                        <h5>Download Generated Files:</h5>
+                        <div class="d-grid gap-2">
+                            <a href="${data.files.text_pdf}" class="btn btn-primary" target="_blank">
+                                <i class="bi bi-file-pdf"></i> Download Text PDF
+                            </a>
+                            <a href="${data.files.cover_pdf}" class="btn btn-primary" target="_blank">
+                                <i class="bi bi-file-pdf"></i> Download Cover PDF
+                            </a>
+                        </div>
+                    </div>`;
+                responseContent.innerHTML = downloadLinks;
+                responseContent.parentElement.className = 'border rounded p-3';
+            } else {
+                responseContent.textContent = JSON.stringify(data, null, 2);
+                responseContent.parentElement.className = 
+                    response.ok ? 'border rounded p-3' : 'border rounded p-3 bg-danger-subtle';
+            }
 
         } catch (error) {
             responseContent.textContent = JSON.stringify({

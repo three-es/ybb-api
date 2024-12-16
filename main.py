@@ -2549,6 +2549,7 @@ def submit():
         start_time = time.time()
         ###### Merge all Canvas Together ####
         output.addPage(page1)
+        book_type = 'hard'
         outputStream = open("static/media/full_book/output/{}_{}_{}_{}_cover.pdf".format(session_id_django, book_name_input, date_input, book_type), "wb")
         output.write(outputStream)
         outputStream.close()
