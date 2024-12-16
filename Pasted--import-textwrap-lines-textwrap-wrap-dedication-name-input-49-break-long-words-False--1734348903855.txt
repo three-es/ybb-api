@@ -1,0 +1,67 @@
+ import textwrap
+        lines = textwrap.wrap(dedication_name_input, 49, break_long_words=False)
+
+        if 50 <= len(dedication_name_input) <= 100:
+            y_pos = 430
+            for i in lines:
+                y_pos = y_pos - 30
+                can.drawCentredString(x_pos, y_pos, i)
+                print(lines)
+                print(y_pos)
+            #wrap_text = textwrap.wrap(dedication_name_input, width=50)
+            #can.drawCentredString(x_pos, y_pos-45, wrap_text[0])
+            #can.drawCentredString(x_pos, y_pos-75, wrap_text[1])
+        elif 100 <= len(dedication_name_input) <= 150:
+            y_pos = 445
+            for i in lines:
+                y_pos = y_pos - 30
+                can.drawCentredString(x_pos, y_pos, i)
+                print(lines)
+                print(y_pos)
+            #wrap_text = textwrap.wrap(dedication_name_input, width=50)
+            #can.drawCentredString(x_pos, y_pos-30, wrap_text[0])
+            #can.drawCentredString(x_pos, y_pos-60, wrap_text[1])
+            #can.drawCentredString(x_pos, y_pos-90, wrap_text[2])
+        elif 150 <= len(dedication_name_input) <= 200:
+            y_pos = 445
+            for i in lines:
+                y_pos = y_pos - 30
+                can.drawCentredString(x_pos, y_pos, i)
+                print(lines)
+                print(y_pos)
+            #wrap_text = textwrap.wrap(dedication_name_input, width=50)
+            #can.drawCentredString(x_pos, y_pos, wrap_text[0])
+            #can.drawCentredString(x_pos, y_pos-30, wrap_text[1])
+            #can.drawCentredString(x_pos, y_pos-60, wrap_text[2])
+            #can.drawCentredString(x_pos, y_pos-90, wrap_text[3])
+        elif 200 <= len(dedication_name_input) <= 250:
+            y_pos = 445
+            for i in lines:
+                y_pos = y_pos - 30
+                can.drawCentredString(x_pos, y_pos, i)
+                print(lines)
+                print(y_pos)
+            #wrap_text = textwrap.wrap(dedication_name_input, width=50)
+            #can.drawCentredString(x_pos, y_pos, wrap_text[0])
+            #can.drawCentredString(x_pos, y_pos-30, wrap_text[1])
+            #can.drawCentredString(x_pos, y_pos-60, wrap_text[2])
+            #can.drawCentredString(x_pos, y_pos-90, wrap_text[3])
+            #can.drawCentredString(x_pos, y_pos-120, wrap_text[4])
+        elif 250 <= len(dedication_name_input) <= 275:
+            y_pos = 445
+            for i in lines:
+                y_pos = y_pos - 30
+                can.drawCentredString(x_pos, y_pos, i)
+                print(lines)
+                print(y_pos)
+            #wrap_text = textwrap.wrap(dedication_name_input, width=50)
+            #can.drawCentredString(x_pos, y_pos+15, wrap_text[0])
+            #can.drawCentredString(x_pos, y_pos-15, wrap_text[1])
+            #can.drawCentredString(x_pos, y_pos-45, wrap_text[2])
+            #can.drawCentredString(x_pos, y_pos-75, wrap_text[3])
+            #can.drawCentredString(x_pos, y_pos-105, wrap_text[4])
+            #can.drawCentredString(x_pos, y_pos-135, wrap_text[5])
+        else:
+            can.drawCentredString(x_pos, y_pos-60, i)
+
+        can.save()

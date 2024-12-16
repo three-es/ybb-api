@@ -288,7 +288,8 @@ def submit():
             #can.drawCentredString(x_pos, y_pos-105, wrap_text[4])
             #can.drawCentredString(x_pos, y_pos-135, wrap_text[5])
         else:
-            can.drawCentredString(x_pos, y_pos-60, i)
+            # Handle short dedications (less than 50 characters)
+            can.drawCentredString(x_pos, y_pos-60, dedication_name_input)
 
         can.save()
 
