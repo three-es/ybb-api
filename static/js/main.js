@@ -29,8 +29,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const data = await response.json();
             
-            // Format and display response
-            responseContent.textContent = JSON.stringify(data, null, 2);
+            // Format and display response with submitted data details
+            const formattedResponse = {
+                status: data.success ? 'Success' : 'Error',
+                submittedData: data.data || {},
+                message: data.message || data.error || ''
+            };
+            
+            responseContent.textContent = JSON.stringify(formattedResponse, null, 2);
             responseContent.parentElement.className = 
                 response.ok ? 'border rounded p-3 bg-success-subtle' : 'border rounded p-3 bg-danger-subtle';
 
