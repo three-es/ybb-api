@@ -2747,11 +2747,20 @@ def submit():
             }), 400
         base_url = request.url_root.rstrip('/')
         # Process the data (placeholder for Google view integration)
+        # Create sanitized filenames
+        text_filename = f"{session_id_django}_{book_name_input.replace(' ', '')}_{date_input}_text.pdf"
+        cover_filename = f"{session_id_django}_{book_name_input.replace(' ', '')}_{date_input}_cover.pdf"
+        
+        # Save files with sanitized names
+        outputStream = open(os.path.join('static/media/full_book/output', text_filename), "wb")
+        output1.write(outputStream)
+        outputStream.close()
+        
         response_data = {
             'success': True,
             'Processing Time': total_time,
-            'Order URL Text': f"{base_url}/download/{session_id_django}_{book_name_input}_{date_input}_text.pdf",
-            'Order URL Cover': f"{base_url}/download/{session_id_django}_{book_name_input}_{date_input}_cover.pdf",
+            'Order URL Text': f"{base_url}/download/{text_filename}",
+            'Order URL Cover': f"{base_url}/download/{cover_filename}",
             'message': 'Form data received successfully',
             'submitted_data': {
                 'name': data['name'],
