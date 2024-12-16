@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Show loading state
         submitBtn.disabled = true;
         spinner.classList.remove('d-none');
-
+        
         // Gather form data
         const formData = {
             name: document.getElementById('name').value,
@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const data = await response.json();
             console.log('Response received:', data);
-
+            
             // Display the response data and download links if available
             if (data.success) {
                 if (data['Order URL Text'] && data['Order URL Cover']) {

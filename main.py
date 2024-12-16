@@ -1,72 +1,9 @@
 import logging
-from werkzeug.utils import secure_filename
-from flask import Flask, jsonify, request, send_from_directory, render_template
 import os
-import logging
-from datetime import datetime
-
-# Configure logging
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
-
-# Initialize Flask app
-app = Flask(__name__)
-
-# Ensure upload directory exists
-UPLOAD_FOLDER = os.path.join('static', 'media', 'full_book', 'output')
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-# Configure maximum content length for file uploads (50MB)
-app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024
-@app.route('/download/<path:filename>')
-def download_file(filename):
-    try:
-        # Ensure the filename doesn't contain directory traversal
-        safe_filename = secure_filename(os.path.basename(filename))
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], safe_filename)
-        
-        if not os.path.exists(file_path):
-            logger.error(f"File not found: {file_path}")
-            return jsonify({
-                'success': False,
-                'error': 'File not found'
-            }), 404
-            
-        return send_from_directory(app.config['UPLOAD_FOLDER'], safe_filename)
-    except Exception as e:
-        logger.error(f"Error serving file: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': 'File not found'
-        }), 404
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-import os
-from google.cloud import storage
-
-def upload_to_gcs(source_file_path, destination_blob_name):
-    """Uploads a file to Google Cloud Storage."""
-    try:
-        storage_client = storage.Client.create_anonymous_client()
-        bucket = storage_client.bucket('ybb-api')
-        blob = bucket.blob(destination_blob_name)
-        
-        # Upload the file
-        with open(source_file_path, 'rb') as f:
-            blob.upload_from_file(f)
-        
-        # Make the blob publicly accessible
-        blob.make_public()
-        
-        # Get the public URL
-        return blob.public_url
-    except Exception as e:
-        logger.error(f"Error uploading to GCS: {str(e)}")
-        raise
-from flask import Flask, render_template, request, jsonify, send_from_directory, url_for
+from flask import Flask, render_template, request, jsonify
 from datetime import datetime
 import django
 from django.conf import settings
-from flask_cors import CORS
 
 # Configure Django settings
 if not settings.configured:
@@ -115,43 +52,12 @@ from datetime import date
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-# Initialize CORS after creating the Flask app
 app = Flask(__name__)
-CORS(app)
-
-# Add this after creating the Flask app
-app.config['STATIC_FOLDER'] = os.path.join(app.root_path, 'static')
-os.makedirs(os.path.join(app.root_path, 'static', 'media', 'full_book', 'output'), exist_ok=True)
+app.secret_key = "your-secret-key-here"
 
 @app.route('/')
 def index():
     return render_template('index.html')
-
-# Create secure downloads directory
-DOWNLOADS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'secure_downloads')
-os.makedirs(DOWNLOADS_DIR, exist_ok=True)
-
-@app.route('/download/<path:filename>')
-def download_file(filename):
-    try:
-        # Define the directory where your generated files are stored
-        uploads_dir = os.path.join(app.root_path, 'static', 'media', 'full_book', 'output')
-        return send_from_directory(
-            uploads_dir,
-            filename,
-            as_attachment=True
-        )
-    except Exception as e:
-        logger.error(f"Error serving file: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': 'File not found'
-        }), 404
-
-def generate_download_url(filename):
-    """Generate a proper download URL for a file"""
-    secure_name = secure_filename(filename)
-    return url_for('download_file', filename=secure_name, _external=True)
 
 from auth import require_api_auth, init_api_auth
 
@@ -170,7 +76,7 @@ def generate_book():
                 'success': False,
                 'error': 'No data received'
             }), 400
-
+        
         # Validate required fields
         required_fields = ['name', 'dedication', 'date']
         for field in required_fields:
@@ -184,7 +90,7 @@ def generate_book():
         name = data.get('name')
         dedication = data.get('dedication')
         date = data.get('date')
-
+        
         # Log the received data
         logger.info("Received API request:")
         logger.info(f"Name: {name}")
@@ -195,68 +101,20 @@ def generate_book():
         book_name_input = name.replace("'", "'").replace('"', '"')
         dedication_name_input = dedication.replace("'", "'").replace('"', '"')
         date_input = date
-
+        
         # [Existing PDF generation logic happens here in the submit() function]
-
-        # Define file paths using the secure downloads directory
-        # Generate secure filenames
-        text_filename = secure_filename(f"ybb_{book_name_input}_{date_input}_hard_text.pdf")
-        cover_filename = secure_filename(f"ybb_{book_name_input}_{date_input}_hard_cover.pdf")
-
-        # Define file paths in the static/media/full_book/output directory
-        output_dir = os.path.join(app.root_path, 'static', 'media', 'full_book', 'output')
-        text_filepath = os.path.join(output_dir, text_filename)
-        cover_filepath = os.path.join(output_dir, cover_filename)
-
-        # Create a new PDF writer for the final output
-        output = PdfFileWriter()
         
-        # Add all pages to the output
-        for page in [page1, page2, page3, page4, page5, page6, page7, 
-                    page8, page9, page10, page11, page12]:
-            output.addPage(page)
-
-        # Save PDFs temporarily and upload to GCS
-        temp_dir = os.path.join(app.root_path, 'temp')
-        os.makedirs(temp_dir, exist_ok=True)
+        # Return the download URLs
+        order_url_text = f"static/media/full_book/output/Gregoire_{book_name_input}_{date_input}_hard_text.pdf"
+        order_url_cover = f"static/media/full_book/output/Gregoire_{book_name_input}_{date_input}_hard_cover.pdf"
         
-        temp_text_path = os.path.join(temp_dir, text_filename)
-        temp_cover_path = os.path.join(temp_dir, cover_filename)
-        
-        # Save temporary files
-        with open(temp_text_path, 'wb') as outfile:
-            output.write(outfile)
-        with open(temp_cover_path, 'wb') as outfile:
-            output.write(outfile)
-            
-        try:
-            # Upload to GCS and get public URLs
-            text_url = upload_to_gcs(temp_text_path, text_filename)
-            cover_url = upload_to_gcs(temp_cover_path, cover_filename)
-            
-            # Clean up temporary files
-            os.remove(temp_text_path)
-            os.remove(temp_cover_path)
-            
-            return jsonify({
-                'success': True,
-                'files': {
-                    'text_pdf': text_url,
-                    'cover_pdf': cover_url
-                },
-                'message': 'PDF files generated and uploaded successfully'
-            })
-        except Exception as e:
-            logger.error(f"Error in file upload: {str(e)}")
-            return jsonify({
-                'success': False,
-                'error': 'Error uploading files'
-            }), 500
-        finally:
-            # Ensure cleanup of temporary files
-            for temp_file in [temp_text_path, temp_cover_path]:
-                if os.path.exists(temp_file):
-                    os.remove(temp_file)
+        return jsonify({
+            'success': True,
+            'files': {
+                'text_pdf': request.host_url + order_url_text,
+                'cover_pdf': request.host_url + order_url_cover
+            }
+        })
 
     except Exception as e:
         logger.error(f"Error processing API request: {str(e)}")
@@ -276,28 +134,28 @@ def submit():
                 'success': False,
                 'error': 'No data received'
             }), 400
-
+        
         # Log the received data
         logger.info("Received form submission:")
         logger.info(f"Name: {data.get('name', 'Not provided')}")
         logger.info(f"Dedication: {data.get('dedication', 'Not provided')}")
         logger.info(f"Date: {data.get('date', 'Not provided')}")
-
+        
         # Validate required fields
         required_fields = ['name', 'dedication', 'date']
 
         #### starting the real interactions    
 
         book_name_input = data.get('name', 'Not provided')
-        book_name_input = book_name_input.replace("'", "")
-        book_name_input = book_name_input.replace('"', "")
+        book_name_input = book_name_input.replace("’", "'")
+        book_name_input = book_name_input.replace('”', '"')
         print(book_name_input)
 
         date_input = data.get('date', 'Not provided')
         print("here is each date_input:", date_input)
         dedication_name_input = data.get('dedication', 'Not provided')
-        dedication_name_input = dedication_name_input.replace("'", "")
-        dedication_name_input = dedication_name_input.replace('"', "")
+        dedication_name_input = dedication_name_input.replace("’", "'")
+        dedication_name_input = dedication_name_input.replace('”', '"')
 
 
 
@@ -556,7 +414,7 @@ def submit():
 
         ######## PAGE 5 BUILDER #########
         # 1264 × 612 Resolution of images
-        session_id_django = 'ybb'
+        session_id_django = 'Gregoire'
         start_time = time.time()
         month = int(date_input[5:7])
         day = int(date_input[8:10])
@@ -1433,7 +1291,7 @@ def submit():
             Atribute2 = "You are an inspired thinker"
             Atribute3 = "You are devoted to family and friends"
         elif att_date == '02/07':
-            Atribute1 = "You are a busy bee'"
+            Atribute1 = "You are a busy bee’"
             Atribute2 = "You are warm and gracious"
             Atribute3 = "You are devoted to family and friends"
         elif att_date == '03/07':
@@ -2756,7 +2614,7 @@ def submit():
         ###### Merge all Canvas Together ####
         output.addPage(page1)
         book_type = 'hard'
-        outputStream = open("static/media/full_book/output/{}_{}_{}_cover.pdf".format(session_id_django, book_name_input, date_input), "wb")
+        outputStream = open("static/media/full_book/output/{}_{}_{}_{}_cover.pdf".format(session_id_django, book_name_input, date_input, book_type), "wb")
         output.write(outputStream)
         outputStream.close()
 
@@ -2788,9 +2646,9 @@ def submit():
         #output1.addPage(page25)
         #output1.addPage(page25_1)
 
-        session_id_django = 'ybb'
+
         # finally, write "output" to a real file
-        outputStream = open(f"static/media/full_book/output/{session_id_django}_{book_name_input}_{date_input}_text.pdf", "wb")
+        outputStream = open("static/media/full_book/output/{}_{}_{}_{}_text.pdf".format(session_id_django, book_name_input, date_input, book_type), "wb")
         output1.write(outputStream)
         outputStream.close()
         end_time_merge = (time.time() - start_time)
@@ -2799,17 +2657,11 @@ def submit():
 
 
         print("PDF BOOK BUILDING COMPLETED IN:-", total_time)
-        order_url_text = "static/media/full_book/output/{}_{}_{}_text.pdf".format(session_id_django, book_name_input, date_input)
-        print(order_url_text)
-        order_url_cover = "static/media/full_book/output/{}_{}_{}_cover.pdf".format(session_id_django, book_name_input, date_input)
-        print(order_url_cover)
-        print(book_name_input)
-        print(date_input)
-        print(session_id_django)
+        order_url_text = "static/media/full_book/output/{}_{}_{}_{}_text.pdf".format(session_id_django, book_name_input, date_input, book_type)
+        order_url_cover = "static/media/full_book/output/{}_{}_{}_{}_cover.pdf".format(session_id_django, book_name_input, date_input, book_type)
 
 
-
-
+        
         for field in required_fields:
             if not data.get(field):
                 logger.error(f"Validation failed: Missing {field}")
@@ -2827,28 +2679,13 @@ def submit():
                 'success': False,
                 'error': 'Invalid date format'
             }), 400
-        base_url = request.url_root.rstrip('/')
+
         # Process the data (placeholder for Google view integration)
-        # Create sanitized filenames
-        # Create output directory if it doesn't exist
-        output_dir = os.path.join('static', 'media', 'full_book', 'output')
-        os.makedirs(output_dir, exist_ok=True)
-        
-        # Sanitize filenames
-        sanitized_name = secure_filename(book_name_input.replace(' ', '_'))
-        text_filename = f"{session_id_django}_{sanitized_name}_{date_input}_text.pdf"
-        cover_filename = f"{session_id_django}_{sanitized_name}_{date_input}_cover.pdf"
-        
-        # Save files with sanitized names
-        text_path = os.path.join(output_dir, text_filename)
-        with open(text_path, "wb") as outputStream:
-            output1.write(outputStream)
-        
         response_data = {
             'success': True,
-            'Processing Time': total_time,
-            'Order URL Text': f"{base_url}/download/{text_filename}",
-            'Order URL Cover': f"{base_url}/download/{cover_filename}",
+            'Processing Time:' : total_time,
+            'Order URL Text' : order_url_text,
+            'Order URL Cover' : order_url_cover,
             'message': 'Form data received successfully',
             'submitted_data': {
                 'name': data['name'],
@@ -2856,7 +2693,7 @@ def submit():
                 'date': data['date']
             }
         }
-
+        
         logger.info("Processing successful, sending response")
         logger.debug(f"Response data: {response_data}")
         return jsonify(response_data)
