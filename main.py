@@ -45,7 +45,7 @@ def submit():
 
         # Here you would typically forward this to your Google view
         # For now, we'll just return the data
-        return jsonify({
+        response_data = {
             'success': True,
             'message': 'Data received successfully',
             'data': {
@@ -53,7 +53,9 @@ def submit():
                 'dedication': data['dedication'],
                 'date': data['date']
             }
-        })
+        }
+        logger.debug(f"Sending response: {response_data}")
+        return jsonify(response_data)
 
     except Exception as e:
         logger.error(f"Error processing request: {str(e)}")

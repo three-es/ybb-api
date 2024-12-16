@@ -29,11 +29,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const data = await response.json();
             
-            // Format and display response with submitted data details
-            const formattedResponse = {
-                status: data.success ? 'Success' : 'Error',
-                submittedData: data.data || {},
-                message: data.message || data.error || ''
+            // Display the response data
+            const formattedResponse = data.success ? {
+                status: 'Success',
+                message: data.message,
+                submittedData: data.data
+            } : {
+                status: 'Error',
+                error: data.error
             };
             
             responseContent.textContent = JSON.stringify(formattedResponse, null, 2);
