@@ -63,27 +63,40 @@ import os
 from flask import send_file
 from werkzeug.utils import secure_filename
 
-# Create output directory if it doesn't exist
-OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'media', 'full_book', 'output')
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+# Create secure downloads directory
+DOWNLOADS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'secure_downloads')
+os.makedirs(DOWNLOADS_DIR, exist_ok=True)
 
-@app.route('/download/<path:filename>')
+@app.route('/download/<filename>')
 def download_file(filename):
     try:
+        # Ensure filename is secure and exists
         secure_name = secure_filename(filename)
-        file_path = os.path.join(OUTPUT_DIR, secure_name)
-        if not os.path.exists(file_path):
+        if not os.path.exists(os.path.join(DOWNLOADS_DIR, secure_name)):
+            logger.error(f"File not found: {secure_name}")
             return jsonify({
                 'success': False,
                 'error': 'File not found'
             }), 404
-        return send_file(file_path, as_attachment=True)
+            
+        # Serve file from secure downloads directory
+        return send_from_directory(
+            DOWNLOADS_DIR,
+            secure_name,
+            as_attachment=True,
+            download_name=secure_name
+        )
     except Exception as e:
         logger.error(f"Error downloading file: {str(e)}")
         return jsonify({
             'success': False,
             'error': 'Error downloading file'
         }), 500
+
+def generate_download_url(filename):
+    """Generate a proper download URL for a file"""
+    secure_name = secure_filename(filename)
+    return url_for('download_file', filename=secure_name, _external=True)
 
 from auth import require_api_auth, init_api_auth
 
@@ -130,12 +143,12 @@ def generate_book():
         
         # [Existing PDF generation logic happens here in the submit() function]
         
-        # Define file paths using the OUTPUT_DIR constant
+        # Define file paths using the secure downloads directory
         text_filename = secure_filename(f"Gregoire_{book_name_input}_{date_input}_hard_text.pdf")
         cover_filename = secure_filename(f"Gregoire_{book_name_input}_{date_input}_hard_cover.pdf")
         
-        text_filepath = os.path.join(OUTPUT_DIR, text_filename)
-        cover_filepath = os.path.join(OUTPUT_DIR, cover_filename)
+        text_filepath = os.path.join(DOWNLOADS_DIR, text_filename)
+        cover_filepath = os.path.join(DOWNLOADS_DIR, cover_filename)
         
         # Save the output PDFs
         output.addPage(page1)
