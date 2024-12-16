@@ -2619,6 +2619,9 @@ def submit():
         # Process the data (placeholder for Google view integration)
         response_data = {
             'success': True,
+            'Processing Time:' : total_time,
+            'Order URL Text' : order_url_text,
+            'Order URL Cover' : order_url_cover,
             'message': 'Form data received successfully',
             'submitted_data': {
                 'name': data['name'],
