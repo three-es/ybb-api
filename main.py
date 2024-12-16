@@ -474,7 +474,7 @@ def submit():
 
         ######## PAGE 5 BUILDER #########
         # 1264 × 612 Resolution of images
-        session_id_django = 'YBB'
+        session_id_django = 'ybb'
         start_time = time.time()
         month = int(date_input[5:7])
         day = int(date_input[8:10])
@@ -2748,13 +2748,19 @@ def submit():
         base_url = request.url_root.rstrip('/')
         # Process the data (placeholder for Google view integration)
         # Create sanitized filenames
-        text_filename = f"{session_id_django}_{book_name_input.replace(' ', '')}_{date_input}_text.pdf"
-        cover_filename = f"{session_id_django}_{book_name_input.replace(' ', '')}_{date_input}_cover.pdf"
+        # Create output directory if it doesn't exist
+        output_dir = os.path.join('static', 'media', 'full_book', 'output')
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # Sanitize filenames
+        sanitized_name = secure_filename(book_name_input.replace(' ', '_'))
+        text_filename = f"{session_id_django}_{sanitized_name}_{date_input}_text.pdf"
+        cover_filename = f"{session_id_django}_{sanitized_name}_{date_input}_cover.pdf"
         
         # Save files with sanitized names
-        outputStream = open(os.path.join('static/media/full_book/output', text_filename), "wb")
-        output1.write(outputStream)
-        outputStream.close()
+        text_path = os.path.join(output_dir, text_filename)
+        with open(text_path, "wb") as outputStream:
+            output1.write(outputStream)
         
         response_data = {
             'success': True,
