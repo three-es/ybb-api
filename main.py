@@ -51,10 +51,14 @@ def upload_to_gcs(source_file_path, destination_blob_name):
         blob = bucket.blob(destination_blob_name)
         
         # Upload the file
-        blob.upload_from_filename(source_file_path)
+        with open(source_file_path, 'rb') as f:
+            blob.upload_from_file(f)
+        
+        # Make the blob publicly accessible
+        blob.make_public()
         
         # Get the public URL
-        return f"https://storage.googleapis.com/ybb-api/{destination_blob_name}"
+        return blob.public_url
     except Exception as e:
         logger.error(f"Error uploading to GCS: {str(e)}")
         raise
