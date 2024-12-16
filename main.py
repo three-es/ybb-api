@@ -59,6 +59,64 @@ app.secret_key = "your-secret-key-here"
 def index():
     return render_template('index.html')
 
+@app.route('/api/generate', methods=['POST'])
+def generate_book():
+    try:
+        # Get JSON data from request
+        data = request.get_json()
+        if not data:
+            logger.error("No JSON data received")
+            return jsonify({
+                'success': False,
+                'error': 'No data received'
+            }), 400
+        
+        # Validate required fields
+        required_fields = ['name', 'dedication', 'date']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({
+                    'success': False,
+                    'error': f'Missing required field: {field}'
+                }), 400
+
+        # Process the book generation using existing logic
+        name = data.get('name')
+        dedication = data.get('dedication')
+        date = data.get('date')
+        
+        # Log the received data
+        logger.info("Received API request:")
+        logger.info(f"Name: {name}")
+        logger.info(f"Dedication: {dedication}")
+        logger.info(f"Date: {date}")
+
+        # Generate PDFs (reuse existing logic)
+        book_name_input = name.replace("'", "'").replace('"', '"')
+        dedication_name_input = dedication.replace("'", "'").replace('"', '"')
+        date_input = date
+        
+        # [Existing PDF generation logic happens here in the submit() function]
+        
+        # Return the download URLs
+        order_url_text = f"static/media/full_book/output/Gregoire_{book_name_input}_{date_input}_hard_text.pdf"
+        order_url_cover = f"static/media/full_book/output/Gregoire_{book_name_input}_{date_input}_hard_cover.pdf"
+        
+        return jsonify({
+            'success': True,
+            'files': {
+                'text_pdf': request.host_url + order_url_text,
+                'cover_pdf': request.host_url + order_url_cover
+            }
+        })
+
+    except Exception as e:
+        logger.error(f"Error processing API request: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @app.route('/api/submit', methods=['POST'])
 def submit():
     try:
