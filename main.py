@@ -18,10 +18,17 @@ def submit():
     try:
         data = request.get_json()
         
+        # Log the received data
+        logger.info("Received form submission:")
+        logger.info(f"Name: {data.get('name', 'Not provided')}")
+        logger.info(f"Dedication: {data.get('dedication', 'Not provided')}")
+        logger.info(f"Date: {data.get('date', 'Not provided')}")
+        
         # Validate required fields
         required_fields = ['name', 'dedication', 'date']
         for field in required_fields:
             if not data.get(field):
+                logger.error(f"Validation failed: Missing {field}")
                 return jsonify({
                     'success': False,
                     'error': f'Missing required field: {field}'
